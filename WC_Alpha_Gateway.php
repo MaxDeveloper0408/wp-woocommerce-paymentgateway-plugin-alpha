@@ -401,11 +401,6 @@ function Alpha_init_gateway_class() {
 	            'body' => json_encode($requestBody),
 	        );
 
-	        // print_r(json_encode($requestBody));
-	        // print_r('------------------------<br>');
-	        // print_r($args);
-	        // die();
-
 	        $apiUrl = $this->api_address;
 	        $response = wp_remote_post( $apiUrl, $args );    
 
