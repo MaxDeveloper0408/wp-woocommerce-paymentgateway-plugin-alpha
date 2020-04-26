@@ -19,7 +19,7 @@ define('WC_ALPHA_URL', rtrim(plugin_dir_url(__FILE__), '/'));
 add_filter( 'woocommerce_payment_gateways', 'Alpha_add_gateway_class' );
 
 function Alpha_add_gateway_class( $gateways ) {
-	$gateways[] = 'WC_Alpha_Gateway'; // your class name is here
+	$gateways[] = 'WC_Alpha_Gateway';
 	return $gateways;
 }
 
