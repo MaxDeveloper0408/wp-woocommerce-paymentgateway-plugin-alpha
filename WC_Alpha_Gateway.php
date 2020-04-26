@@ -378,17 +378,10 @@ function Alpha_init_gateway_class() {
 			);
 	        
 	        
-		   //Create a session and send it to Payment platform while handling errors 
 	       $requestBody = array(
 	       		'customer' => $customer,
 	       		'payment' => $payment,
 	            'merchantId' => $this->merchant_id,
-	            // 'transactions' => $transactions,
-	            // "redirectOnSuccessUrl" => $this->siteUrl . $this->SUCCESS_REDIRECT_URL . $orderIdString,
-	            // "redirectOnFailureUrl" => $this->siteUrl . $this->FAILURE_REDIRECT_URL . $orderIdString,
-	            // "callbackOnSuccessUrl" => $this->siteUrl . "//wc-api/" . $this->SUCCESS_CALLBACK_URL . $orderIdString,
-	            // "callbackOnFailureUrl" => $this->siteUrl . "//wc-api/" . $this->FAILURE_CALLBACK_URL . $orderIdString,
-	            // "redirectTarget" => "TOP",
 	            "merchantCustomerId" => $merchantCustomerId,
 	            "merchantOrderId" => $merchantOrderId,
 	            "splitgroup"=> 'null',
