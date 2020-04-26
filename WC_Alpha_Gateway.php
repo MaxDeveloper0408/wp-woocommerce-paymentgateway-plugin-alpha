@@ -37,8 +37,8 @@ function Alpha_init_gateway_class() {
 
  		public function __construct() {
  
-			$this->id = WC_ALPHA_PAY_ID; // payment gateway plugin ID
-			$this->icon ='';    // URL of icon that will be displayed on the checkout page      	
+			$this->id = WC_ALPHA_PAY_ID; 
+			$this->icon ='';    
 			$this->has_fields = true;
 			$this->method_title = 'Alpha Payment Gateway Plugin';
 			$this->method_description = 'Alpha Payment Gateway Plugin.';  
