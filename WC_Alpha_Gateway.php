@@ -11,7 +11,6 @@
  */
 if(!defined('ABSPATH'))
     exit();
-
 define('WC_ALPHA_PAY_ID', 'alpha');
 define('WC_ALPHA_DIR', rtrim(plugin_dir_path(__FILE__), '/'));
 define('WC_ALPHA_URL', rtrim(plugin_dir_url(__FILE__), '/'));
