@@ -445,7 +445,10 @@ function Alpha_init_gateway_class() {
 	       $requestBody = array(
 	       		'customer' => $customer,
 	       		'payment' => $payment,
-	            "splitgroup"=> 'null',
+	            "splitgroup"=> array (
+            	    "splitGroupHash"=> '',
+				    "itens"=> null
+	            ),
 	            "sellerid"=> 0,
 	            "callbackUrl"=> null,
 	            "softDescriptor"=> null,
