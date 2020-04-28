@@ -322,8 +322,39 @@ function Alpha_init_gateway_class() {
 	 	public function payment_scripts() {
  
 	 	}
-		public function validate_fields() {
- 
+		public function validate_fields(){
+		 
+			if( empty( $_POST[ 'Alpha_name' ]) ) {
+				wc_add_notice(  'Card Name is required!', 'error' );
+				return false;
+			}
+			if( empty( $_POST[ 'Alpha_ccNo' ]) ) {
+				wc_add_notice(  'Card Number is required!', 'error' );
+				return false;
+			}
+			$exdate = sanitize_text_field($_POST['Alpha_expdate']);
+    	    $ex_month = explode('/',$exdate)[0];
+    	    $ex_year = explode('/',$exdate)[1];
+
+    	    if (empty($ex_month)) {
+    	    	wc_add_notice(  'Expiry Month is required!', 'error' );
+				return false;
+    	    }
+    	    if (empty($ex_year)) {
+    	    	wc_add_notice(  'Expiry Year is required!', 'error' );
+				return false;
+    	    }
+
+			if( empty( $_POST[ 'Alpha_ccNo' ]) ) {
+				wc_add_notice(  'Card Number is required!', 'error' );
+				return false;
+			}
+			if( empty( $_POST[ 'Alpha_cvv' ]) ) {
+				wc_add_notice(  'Card Code is required!(or length must be 3)', 'error' );
+				return false;
+			}
+			return true;
+		 
 		}
 		public function process_payment( $order_id ) {
 	        global $woocommerce;
@@ -402,16 +433,29 @@ function Alpha_init_gateway_class() {
 				)
 			);
 	        
-	        
+		   $customer_ip = '';
+		   if ( ! empty( $_SERVER['HTTP_CLIENT_IP'] ) ) {
+				$customer_ip = $_SERVER['HTTP_CLIENT_IP'];
+			} elseif ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
+				$customer_ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+			} else {
+				$customer_ip = $_SERVER['REMOTE_ADDR'];
+	   		}
+
 	       $requestBody = array(
 	       		'customer' => $customer,
 	       		'payment' => $payment,
-	            'merchantId' => $this->merchant_id,
-	            "merchantCustomerId" => $merchantCustomerId,
-	            "merchantOrderId" => $merchantOrderId,
 	            "splitgroup"=> 'null',
-	            "sellerid"=> 'null',
-	            "notes"=> 'null'
+	            "sellerid"=> 0,
+	            "callbackUrl"=> null,
+	            "softDescriptor"=> null,
+	            "referenceId"=> null,
+	            "deviceFingerPrint"=> null,
+	            "trackingData"=> array (
+	            	"originDomainName"=> wp_parse_url ( get_site_url(), PHP_URL_HOST ),
+	            	"customerIpAddress"=> $customer_ip,
+	            ),
+	            "notes"=> null
 	        );
 
 	        $header = array(
