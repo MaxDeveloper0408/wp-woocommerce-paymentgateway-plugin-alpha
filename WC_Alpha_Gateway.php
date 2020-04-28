@@ -138,22 +138,15 @@ function Alpha_init_gateway_class() {
 
 		public function payment_fields() {
 			if ( $this->description ) {
-				// you can instructions for test mode, I mean test card numbers etc.
 				if ( $this->testmode ) {
 					$this->description .= ' TEST MODE ENABLED. In test mode, you can use theese ';
 					$this->description  = trim( $this->description );
 				}
-				// display the description with <p> tags etc.
 				echo wpautop( wp_kses_post( $this->description ) );
 			}
 		 
-			// I will echo() the form, but you can close PHP tags and print it directly in HTML
 			echo '<fieldset id="wc-' . esc_attr( $this->id ) . '-cc-form" class="wc-credit-card-form wc-payment-form" style="background:transparent;">';
-		 
-				// Add this action hook if you want your custom payment gateway to support it
 				do_action( 'woocommerce_credit_card_form_start', $this->id );
-			 
-				// I recommend to use inique IDs, because other gateways could already use #ccNo, #expdate, #cvc
 					echo '
 						<style>
 							.wc_payment_methods .payment_box p {
@@ -296,9 +289,7 @@ function Alpha_init_gateway_class() {
 						<select>
 						</div>
 						<div class="clear"></div>';
-			 
 				do_action( 'woocommerce_credit_card_form_end', $this->id );
-		 
 			echo '<div class="clear"></div></fieldset>';
  		}
 
@@ -312,12 +303,18 @@ function Alpha_init_gateway_class() {
 	        $ccNo = sanitize_text_field($_POST['Alpha_ccNo']);
 	        $cvv = sanitize_text_field($_POST['Alpha_cvv']);
 	        $installments = sanitize_text_field($_POST['Alpha_installments']);
+	        $billing_birthdate = sanitize_text_field($_POST['billing_birthdate']);
+	        $billing_cpf = sanitize_text_field($_POST['billing_cpf']);
+
 	        update_post_meta($order_id, 'payType', $payType);
 	        update_post_meta($order_id, 'holderName', $holderName);
 	        update_post_meta($order_id, 'exdate', $exdate);
 	        update_post_meta($order_id, 'ccNo', $ccNo);
 	        update_post_meta($order_id, 'cvv', $cvv);
 	        update_post_meta($order_id, 'installments', $installments);
+	        update_post_meta($order_id, 'billing_birthdate', $billing_birthdate);
+	        update_post_meta($order_id, 'billing_cpf', $billing_cpf);
+
 	    }
 	 	public function payment_scripts() {
  
@@ -359,21 +356,12 @@ function Alpha_init_gateway_class() {
 		public function process_payment( $order_id ) {
 	        global $woocommerce;
 	  
-			//To receive order id 
 	        $order = wc_get_order( $order_id );
-
-			//To receive order amount
 	        $amount = $order->get_total();
-
-			//To receive woocommerce Currency
 	        $currency = get_woocommerce_currency();
-
-			//To receive user id and order details
 	        $merchantCustomerId = $order->get_user_id();
 	        $merchantOrderId = $order->get_order_number();
-
 	        $orderIdString = '?orderId=' . $order_id;
-
 	        $transaction = array(
 	            "amount" => $amount,
 	            "currency" => $currency,
@@ -381,16 +369,13 @@ function Alpha_init_gateway_class() {
 	        $transactions = array(
 	            $transaction
 	        );
-
 	       $customer_user_id = get_post_meta( $order_id, '_customer_user', true );
-
-			// Get an instance of the WC_Customer Object from the user ID
 		   $get_customer = new WC_Customer( $customer_user_id );
-	       // post customize
+
     	   $customer = array (
 	        	"name"=> $get_customer->get_first_name().' '.$get_customer->get_last_name(),
-				"birthDate"=> '',
-				"document"=> '',
+				"birthDate"=> stripslashes(get_post_meta($order_id, 'billing_birthdate', true)),
+				"document"=> get_post_meta($order_id, 'billing_cpf', true),
 				"email"=> $get_customer->get_email(),
 	        	"billingAdress" => array (
 		        	"street"=> $order->get_billing_address_1().' '.$order->get_billing_address_2(),
@@ -432,7 +417,6 @@ function Alpha_init_gateway_class() {
 					"securityCode"=> get_post_meta($order_id, 'cvv', true)
 				)
 			);
-	        
 		   $customer_ip = '';
 		   if ( ! empty( $_SERVER['HTTP_CLIENT_IP'] ) ) {
 				$customer_ip = $_SERVER['HTTP_CLIENT_IP'];
@@ -441,13 +425,17 @@ function Alpha_init_gateway_class() {
 			} else {
 				$customer_ip = $_SERVER['REMOTE_ADDR'];
 	   		}
-
 	       $requestBody = array(
 	       		'customer' => $customer,
 	       		'payment' => $payment,
 	            "splitGroup"=> array (
             	    "splitGroupHash"=> '',
-				    "itens"=> null
+				    "itens"=> array(
+				    	array (
+						        "amount"=> 0,
+						        "sellerHash"=> null
+				    	)
+				    )
 	            ),
 	            "sellerId"=> 0,
 	            "callbackUrl"=> null,
@@ -456,7 +444,7 @@ function Alpha_init_gateway_class() {
 	            "deviceFingerPrint"=> null,
 	            "trackingData"=> array (
 	            	"originDomainName"=> wp_parse_url ( get_site_url(), PHP_URL_HOST ),
-	            	"customerIpAddress"=> $customer_ip,
+	            	"customerIpAddress"=> $_SERVER['REMOTE_ADDR'],
 	            ),
 	            "notes"=> null
 	        );
@@ -472,7 +460,6 @@ function Alpha_init_gateway_class() {
 	            'headers' => $header,
 	            'body' => json_encode($requestBody),
 	        );
-	        print_r(json_encode($requestBody));
 	        $apiUrl = $this->api_address;
 	        $response = wp_remote_post( $apiUrl, $args );    
 	        
@@ -502,8 +489,6 @@ function Alpha_init_gateway_class() {
 			        );
 
 			    } else {
-			    	print_r($body);
-			    	die();
 	                wc_add_notice(  'Please try again', 'error' );
 	                return;
 			    }
