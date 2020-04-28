@@ -22,6 +22,31 @@ function Alpha_add_gateway_class( $gateways ) {
 	return $gateways;
 }
 
+function getIP() {
+    $ip = $_SERVER['SERVER_ADDR'];
+
+    if (PHP_OS == 'WINNT'){
+        $ip = getHostByName(getHostName());
+    }
+
+    if (PHP_OS == 'Linux'){
+        $command="/sbin/ifconfig";
+        exec($command, $output);
+        // var_dump($output);
+        $pattern = '/inet addr:?([^ ]+)/';
+
+        $ip = array();
+        foreach ($output as $key => $subject) {
+            $result = preg_match_all($pattern, $subject, $subpattern);
+            if ($result == 1) {
+                if ($subpattern[1][0] != "127.0.0.1")
+                $ip = $subpattern[1][0];
+            }
+        }
+    }
+    return $ip;
+}
+
 add_action( 'plugins_loaded', 'Alpha_init_gateway_class' );
 function Alpha_init_gateway_class() {
 
@@ -303,7 +328,7 @@ function Alpha_init_gateway_class() {
 	        $ccNo = sanitize_text_field($_POST['Alpha_ccNo']);
 	        $cvv = sanitize_text_field($_POST['Alpha_cvv']);
 	        $installments = sanitize_text_field($_POST['Alpha_installments']);
-	        $billing_birthdate = sanitize_text_field($_POST['billing_birthdate']);
+	        $billing_birthdate = wp_strip_all_tags(sanitize_text_field($_POST['billing_birthdate']));
 	        $billing_cpf = sanitize_text_field($_POST['billing_cpf']);
 
 	        update_post_meta($order_id, 'payType', $payType);
@@ -369,12 +394,13 @@ function Alpha_init_gateway_class() {
 	        $transactions = array(
 	            $transaction
 	        );
+
 	       $customer_user_id = get_post_meta( $order_id, '_customer_user', true );
 		   $get_customer = new WC_Customer( $customer_user_id );
 
     	   $customer = array (
 	        	"name"=> $get_customer->get_first_name().' '.$get_customer->get_last_name(),
-				"birthDate"=> stripslashes(get_post_meta($order_id, 'billing_birthdate', true)),
+				"birthDate"=> str_replace("\/", "/",get_post_meta($order_id, 'billing_birthdate', true)),
 				"document"=> get_post_meta($order_id, 'billing_cpf', true),
 				"email"=> $get_customer->get_email(),
 	        	"billingAdress" => array (
@@ -444,11 +470,13 @@ function Alpha_init_gateway_class() {
 	            "deviceFingerPrint"=> null,
 	            "trackingData"=> array (
 	            	"originDomainName"=> wp_parse_url ( get_site_url(), PHP_URL_HOST ),
-	            	"customerIpAddress"=> $_SERVER['REMOTE_ADDR'],
+	            	"customerIpAddress"=> gethostbyname(gethostname()),
 	            ),
 	            "notes"=> null
 	        );
 
+	       print_r($requestBody);
+	       die();
 	        $header = array(
 	            //'Authorization' => $this->auth_token,
 	            'accept' => 'text/plain',
