@@ -69,10 +69,6 @@ function Alpha_init_gateway_class() {
 
 			add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
 			add_action('woocommerce_checkout_update_order_meta', array($this, 'custom_payment_update_order_meta'));
-
-			 // Callback Actions 
-			// add_action( 'woocommerce_api_'. $this->SUCCESS_CALLBACK_URL, array( $this, 'payment_success'));
-			// add_action( 'woocommerce_api_' . $this->FAILURE_CALLBACK_URL, array( $this, 'payment_failure'));			
  		}
 
  		public function init_form_fields(){
@@ -219,6 +215,36 @@ function Alpha_init_gateway_class() {
 							      outline-offset: 1px;
 							}
 						</style>
+						<script>
+							var Alphaexpdate_input = document.querySelectorAll(".Alpha-expdate")[0];
+							var Alphaexpdate_input_dateInputMask = function Alphaexpdate_input_dateInputMask(elm) {
+							  elm.addEventListener("keypress", function(e) {
+							    if(e.keyCode < 47 || e.keyCode > 57) {
+							      e.preventDefault();
+							    }
+							    var len = elm.value.length;
+							    if(len !== 1 || len !== 3) {
+							      if(e.keyCode == 47) {
+							        e.preventDefault();
+							      }
+							    }
+							    if(len === 2) {
+							      elm.value += "/";
+							    }
+							  });
+							};
+							Alphaexpdate_input_dateInputMask(Alphaexpdate_input);
+
+							var Alpha_cvv_input = document.querySelectorAll(".Alpha-cvv")[0];
+							var alphacvvMask = function alphacvvMask(elm) {
+							  elm.addEventListener("keypress", function(e) {
+							    if(e.keyCode < 47 || e.keyCode > 57) {
+							      e.preventDefault();
+							    }
+							  });
+							};
+							alphacvvMask(Alpha_cvv_input);
+						</script>
 				        <div class="form-row form-row-wide alpha-logos">
 				            <label style="">
 				                <input type="radio" name="Alpha_paytype" value="visa" checked/>
@@ -257,11 +283,11 @@ function Alpha_init_gateway_class() {
 						</div>
 						<div class="form-row form-row-first">
 							<label>Expiry Date <span class="required">*</span></label>
-							<input id="Alpha_expdate" name="Alpha_expdate" type="text" autocomplete="off" placeholder="MM / YY">
+							<input id="Alpha_expdate" class="Alpha-expdate" name="Alpha_expdate" type="text" autocomplete="off" pattern="[0-9]{2}/[0-9]{4}" placeholder="MM / YYYY" maxlength="7">
 						</div>
 						<div class="form-row form-row-last">
 							<label>Card Code (CVC) <span class="required">*</span></label>
-							<input id="Alpha_cvv" name="Alpha_cvv" type="password" autocomplete="off" placeholder="CVC">
+							<input id="Alpha_cvv" name="Alpha_cvv" class="Alpha-cvv" type="password" autocomplete="off" placeholder="CVC" minlength="3" maxlength="3" pattern="[0-9]">
 						</div>
 						<div class="form-row form-row-wide"><label>Installments <span class="required">*</span></label>
 						<select name="Alpha_installments">
@@ -399,10 +425,10 @@ function Alpha_init_gateway_class() {
 	            'headers' => $header,
 	            'body' => json_encode($requestBody),
 	        );
-
+	        print_r(json_encode($requestBody));
 	        $apiUrl = $this->api_address;
 	        $response = wp_remote_post( $apiUrl, $args );    
-
+	        
 	        if( !is_wp_error( $response ) ) {
 	            $body = json_decode( $response['body'], true );
 
@@ -429,6 +455,8 @@ function Alpha_init_gateway_class() {
 			        );
 
 			    } else {
+			    	print_r($body);
+			    	die();
 	                wc_add_notice(  'Please try again', 'error' );
 	                return;
 			    }
@@ -437,61 +465,7 @@ function Alpha_init_gateway_class() {
 	            return;
 	        }
     	}
-
-		public function webhook() {
- 
-	 	}
-
-		// public function payment_success() {
-	 //        // Getting POST data
-	 //        $postData = file_get_contents( 'php://input' );
-	 //        $response  = json_decode( $postData );
-	 //        $orderId = $_GET['orderId'];
-	 //        $order = wc_get_order( $orderId );
-	        
-	 //        if ($order && $response) {
-	 //            $order->update_meta_data( 'Alpha_callback_payload', $postData );
-	 //            if ( $response->event === 'CHECKOUT_SUCCEEDED' ) {
-	 //                $order->update_meta_data( 'Alpha_event', $response->event );
-	 //                if ($response->payload->reservations && $response->payload->reservations[0] && $response->payload->reservations[0]->reservationId) {
-	 //                    $order->update_meta_data( 'Alpha_reservation_id', $response->payload->reservations[0]->reservationId );
-	 //                    $reservation_note = "Alpha ReservationID: " . $response->payload->reservations[0]->reservationId;
-	 //                    $order->add_order_note( $reservation_note );
-	 //                    update_post_meta( $orderId, '_Alpha_reservation_id', $response->payload->reservations[0]->reservationId );
-	 //                }
-	 //                $order->update_status( 'completed');
-	 //                $order->payment_complete();
-	 //                $order->reduce_order_stock();
-	 //            } else {
-	 //                $order->update_meta_data( 'Alpha_event', $response->event );
-	 //                if ($response->payload->reservations && $response->payload->reservations[0] && $response->payload->reservations[0]->reservationId) {
-	 //                    $order->update_meta_data( 'Alpha_reservation_id', $response->payload->reservations[0]->reservationId );
-	 //                }
-	 //                $order->update_status( 'failed');
-	 //            }
-	 //        }
-		// }
-		// public function payment_failure() {
-	 //        // Getting POST data
-	 //        $postData = file_get_contents( 'php://input' );
-	 //        $response  = json_decode( $postData );
-	 //        $orderId = $_GET['orderId'];
-	 //        $order = wc_get_order( $orderId );
-
-	 //        if ($order && $response) {
-	 //            $order->update_meta_data( 'Alpha_callback_payload', $postData );
-	 //            $order->update_meta_data( 'Alpha_event', $response->event );
-	 //            if ($response->payload->reservations && $response->payload->reservations[0] && $response->payload->reservations[0]->reservationId) {
-	 //                $order->update_meta_data( 'Alpha_reservation_id', $response->payload->reservations[0]->reservationId );
-	 //            }
-	 //            $order->update_status( 'failed');
-	 //        }
-	 //    }
-
-
-
 	}
-
 }
 
 add_action('woocommerce_admin_order_data_after_billing_address', 'wc_alpha_custom_display_admin', 10, 1);
