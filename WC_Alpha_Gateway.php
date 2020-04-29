@@ -233,7 +233,7 @@ function Alpha_init_gateway_class() {
 							      outline-offset: 1px;
 							}
 						</style>
-						<script>
+						<script type="text/javascript">
 							var Alphaexpdate_input = document.querySelectorAll(".Alpha-expdate")[0];
 							var Alphaexpdate_input_dateInputMask = function Alphaexpdate_input_dateInputMask(elm) {
 							  elm.addEventListener("keypress", function(e) {
@@ -398,9 +398,11 @@ function Alpha_init_gateway_class() {
 	       $customer_user_id = get_post_meta( $order_id, '_customer_user', true );
 		   $get_customer = new WC_Customer( $customer_user_id );
 
+		   $birth_date = DateTime::createFromFormat('d/m/Y',str_replace("\/", "/",get_post_meta($order_id, 'billing_birthdate', true)));
+		   
     	   $customer = array (
 	        	"name"=> $get_customer->get_first_name().' '.$get_customer->get_last_name(),
-				"birthDate"=> str_replace("\/", "/",get_post_meta($order_id, 'billing_birthdate', true)),
+				"birthDate"=> $birth_date->format('Y-m-d').'T00:00:00',
 				"document"=> get_post_meta($order_id, 'billing_cpf', true),
 				"email"=> $get_customer->get_email(),
 	        	"billingAdress" => array (
@@ -475,8 +477,7 @@ function Alpha_init_gateway_class() {
 	            "notes"=> null
 	        );
 
-	       print_r($requestBody);
-	       die();
+
 	        $header = array(
 	            //'Authorization' => $this->auth_token,
 	            'accept' => 'text/plain',
@@ -488,9 +489,10 @@ function Alpha_init_gateway_class() {
 	            'headers' => $header,
 	            'body' => json_encode($requestBody),
 	        );
+
 	        $apiUrl = $this->api_address;
 	        $response = wp_remote_post( $apiUrl, $args );    
-	        
+
 	        if( !is_wp_error( $response ) ) {
 	            $body = json_decode( $response['body'], true );
 
