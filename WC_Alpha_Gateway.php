@@ -47,6 +47,13 @@ function getIP() {
     return $ip;
 }
 
+//register_activation_hook(__FILE__, 'cyb_activation');
+function cyb_activation()
+{
+    exit( wp_redirect( admin_url( 'admin.php?page=wc-settings&tab=checkout&section='.WC_ALPHA_PAY_ID ) ) );
+}
+
+add_action( 'activated_plugin', 'cyb_activation' );
 add_action( 'plugins_loaded', 'Alpha_init_gateway_class' );
 function Alpha_init_gateway_class() {
 
@@ -94,7 +101,10 @@ function Alpha_init_gateway_class() {
 
 			add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
 			add_action('woocommerce_checkout_update_order_meta', array($this, 'custom_payment_update_order_meta'));
+
  		}
+
+
 
  		public function init_form_fields(){
 			    $this->form_fields = array(
@@ -399,7 +409,7 @@ function Alpha_init_gateway_class() {
 		   $get_customer = new WC_Customer( $customer_user_id );
 
 		   $birth_date = DateTime::createFromFormat('d/m/Y',str_replace("\/", "/",get_post_meta($order_id, 'billing_birthdate', true)));
-		   
+
     	   $customer = array (
 	        	"name"=> $get_customer->get_first_name().' '.$get_customer->get_last_name(),
 				"birthDate"=> $birth_date->format('Y-m-d').'T00:00:00',
@@ -409,7 +419,7 @@ function Alpha_init_gateway_class() {
 		        	"street"=> $order->get_billing_address_1().' '.$order->get_billing_address_2(),
 					"number"=> $order->get_order_number(),
 					"complement"=> '',
-					"zipCode"=> $order->get_billing_postcode(),
+					"zipCode"=> str_replace('-', '', $order->get_billing_postcode()),
 					"city"=> $order->get_billing_city(),
 					"state"=> $order->get_billing_state(),
 					"country"=> $order->get_billing_country()
@@ -418,7 +428,7 @@ function Alpha_init_gateway_class() {
 					"street"=> $order->get_shipping_address_1().' '.$order->get_shipping_address_2(),
 					"number"=> $order->get_order_number(),
 					"complement"=> '',
-					"zipCode"=> $order->get_shipping_postcode(),
+					"zipCode"=> str_replace('-', '', $order->get_shipping_postcode()),
 					"city"=> $order->get_shipping_city(),
 					"state"=> $order->get_shipping_state(),
 					"country"=> 'BR',
@@ -496,7 +506,7 @@ function Alpha_init_gateway_class() {
 	        if( !is_wp_error( $response ) ) {
 	            $body = json_decode( $response['body'], true );
 
-	            if ( $body['isSuccess'] ) {
+	            if ( $body['isSuccess'] &&  $body['status'] == 8) {
 
 	                $transactionId = $body['payload']['transactionId'];
 	                $order->update_meta_data( 'Alpha_transactionId', $transactionId );
@@ -518,7 +528,10 @@ function Alpha_init_gateway_class() {
 			            'redirect' => $this->get_return_url($order)
 			        );
 
-			    } else {
+			    } else if($body['status'] == 3) {
+			    	wc_add_notice(  "Falha no pagamento devido a um cartão recusado. Por favor, tente mais tarde ou utilize outro cartão.", 'error' );
+	                return;
+			    }else {
 	                wc_add_notice(  'Please try again', 'error' );
 	                return;
 			    }
